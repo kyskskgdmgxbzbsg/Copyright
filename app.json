@@ -1,0 +1,33 @@
+{
+  "name": "GroupSecurityBot",
+  "description": "A Telegram group security bot built with Pyrogram and MongoDB.",
+  "repository": "https://github.com/yourusername/group-security-bot",
+  "keywords": ["telegram", "bot", "pyrogram", "group", "moderation"],
+  "env": {
+    "API_ID": {
+      "description": "Get it from https://my.telegram.org",
+      "required": true
+    },
+    "API_HASH": {
+      "description": "Get it from https://my.telegram.org",
+      "required": true
+    },
+    "BOT_TOKEN": {
+      "description": "Your bot token from @BotFather",
+      "required": true
+    },
+    "MONGO_URL": {
+      "description": "Your MongoDB connection URI",
+      "required": true
+    },
+    "LOGS_GROUP": {
+      "description": "Group chat ID where logs will be sent (e.g. -1001234567890)",
+      "required": true
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}
