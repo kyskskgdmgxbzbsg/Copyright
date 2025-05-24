@@ -1,4 +1,3 @@
-pyrogram==2.0.34
+pyrogram==2.0.70
 tgcrypto==1.4.2
-pymongo==4.3.3
-uvloop==0.17.0
+pillow==10.0.0
