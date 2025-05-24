@@ -1,15 +1,15 @@
-
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pymongo import MongoClient
 import re
 import datetime
 import time
+import asyncio
 
 BOT_TOKEN = "8020578503:AAFWeiecAUXOmzoOIzzTvnZ8BdcluskMSVk"
 API_ID = "22243185"
 API_HASH = "39d926a67155f59b722db787a23893ac"
-MONGO_URL = "mongodb+srv://manoranjanhor43:somuxd@manoranjan.wsglmdq.mongodb.net/?retryWrites=true&w=majority&appName=Manoranjan"
+MONGO_URL = mongodb+srv://manoranjanhor43:somuxd@manoranjan.wsglmdq.mongodb.net/?retryWrites=true&w=majority&appName=Manoranjan"
 LOGS_GROUP = "-1002100433415"
 ADMINS = "6908972904"  # List of admin user IDs
 
@@ -109,8 +109,7 @@ async def broadcast(client, message):
             pass
     await message.reply("Broadcast sent.")
 
-@client.on_start()
-async def on_start():
+async def send_start_log():
     bot = await client.get_me()
     now = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     await client.send_message(
@@ -118,4 +117,10 @@ async def on_start():
         text=f"✅ **Bot Started**\n\nName: `{bot.first_name}`\nUsername: @{bot.username}\nTime: `{now}`"
     )
 
-client.run()
+async def main():
+    await client.start()
+    await send_start_log()
+    print("Bot is running...")
+    await client.idle()
+
+asyncio.run(main())
