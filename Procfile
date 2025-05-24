@@ -1,1 +1,1 @@
-python3 copyright.py 
+worker: python3 copyright.py
