@@ -8,7 +8,7 @@ import asyncio
 from pyrogram import idle  # ये import जरूर करें
 
 BOT_TOKEN = "7952459394:AAEO3O1L053GlA8qtCi6_H7BxYOZ7t4QhOY"
-API_ID = "22243185"
+API_ID = "21546320"
 API_HASH = "39d926a67155f59b722db787a23893ac"
 MONGO_URL = "mongodb+srv://manoranjanhor43:somuxd@manoranjan.wsglmdq.mongodb.net/?retryWrites=true&w=majority&appName=Manoranjan"
 # सबसे बेहतर: username वाला लॉग ग्रुप इस्तेमाल करें (अगर उपलब्ध हो)
