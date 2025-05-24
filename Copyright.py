@@ -6,12 +6,12 @@ import re
 import datetime
 import time
 
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-API_ID = 1234567
-API_HASH = "your_api_hash"
-MONGO_URL = "your_mongo_url"
-LOGS_GROUP = -1001234567890
-ADMINS = [123456789]  # List of admin user IDs
+BOT_TOKEN = "8020578503:AAFWeiecAUXOmzoOIzzTvnZ8BdcluskMSVk"
+API_ID = "22243185"
+API_HASH = "39d926a67155f59b722db787a23893ac"
+MONGO_URL = "mongodb+srv://manoranjanhor43:somuxd@manoranjan.wsglmdq.mongodb.net/?retryWrites=true&w=majority&appName=Manoranjan"
+LOGS_GROUP = "-1002100433415"
+ADMINS = "6908972904"  # List of admin user IDs
 
 client = Client("groupSecurityBot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH)
 mongo = MongoClient(MONGO_URL)
