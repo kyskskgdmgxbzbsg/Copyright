@@ -9,7 +9,7 @@ import asyncio
 BOT_TOKEN = "8020578503:AAFWeiecAUXOmzoOIzzTvnZ8BdcluskMSVk"
 API_ID = "22243185"
 API_HASH = "39d926a67155f59b722db787a23893ac"
-MONGO_URL = mongodb+srv://manoranjanhor43:somuxd@manoranjan.wsglmdq.mongodb.net/?retryWrites=true&w=majority&appName=Manoranjan"
+MONGO_URL = "mongodb+srv://manoranjanhor43:somuxd@manoranjan.wsglmdq.mongodb.net/?retryWrites=true&w=majority&appName=Manoranjan"
 LOGS_GROUP = "-1002100433415"
 ADMINS = "6908972904"  # List of admin user IDs
 
