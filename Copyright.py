@@ -5,13 +5,15 @@ import re
 import datetime
 import time
 import asyncio
+from pyrogram import idle  # ये import जरूर करें
 
 BOT_TOKEN = "7952459394:AAEO3O1L053GlA8qtCi6_H7BxYOZ7t4QhOY"
 API_ID = "22243185"
 API_HASH = "39d926a67155f59b722db787a23893ac"
 MONGO_URL = "mongodb+srv://manoranjanhor43:somuxd@manoranjan.wsglmdq.mongodb.net/?retryWrites=true&w=majority&appName=Manoranjan"
-LOGS_GROUP = "-1002100433415"
-ADMINS = "6908972904"  # List of admin user IDs
+# सबसे बेहतर: username वाला लॉग ग्रुप इस्तेमाल करें (अगर उपलब्ध हो)
+LOGS_GROUP = "-1002100433415"  # या -1001234567890 अगर ID ही इस्तेमाल करना है
+ADMINS = "6908972904"
 
 client = Client("groupSecurityBot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH)
 mongo = MongoClient(MONGO_URL)
@@ -121,6 +123,7 @@ async def main():
     await client.start()
     await send_start_log()
     print("Bot is running...")
-    await client.idle()
+    await idle()
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
