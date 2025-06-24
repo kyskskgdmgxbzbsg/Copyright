@@ -1,254 +1,149 @@
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import re
-import asyncio
-import time
-from pyrogram import Client, filters, enums
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
-from pyrogram.errors import FloodWait, ChatAdminRequired
-from pyrogram.raw.functions.channels import GetParticipants
-from pyrogram.raw.types import ChannelParticipantsAdmins
-import logging
 
-# --------- CONFIGURATION ---------
-API_ID = "22243185"
-API_HASH = "39d926a67155f59b722db787a23893ac"
-BOT_TOKEN = "8020578503:AAFWeiecAUXOmzoOIzzTvnZ8BdcluskMSVk"
+API_ID = 123456     # ← replace with your API ID
+API_HASH = "your_api_hash"   # ← replace with your API hash
+BOT_TOKEN = "your_bot_token" # ← replace with your Bot token
 
-LOG_GROUP_ID = "-1002100433415"
-OWNER_USERNAME = "silent_era"
-SUPPORT_USERNAME = "frozenTools"
+app = Client("tttbot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-ABUSE_WORDS = [
-    "madarchod", "bhenchodd", "lund", "chut", "gaand", "bsdk", "bahanchod",
-    "ncert", "allen", "porn", "xxx", "sex", "NCERT", "XII", "page", "Ans",
-    "meiotic", "divisions", "System.in", "Scanner", "void", "nextInt"
-]
+games = {}  # {chat_id: game_data}
+invites = {}  # {inviter_id: invited_user_id}
 
-LINK_REGEX = re.compile(r"(https?://|t.me/|telegram.me/|www\.)", re.IGNORECASE)
+def create_board(board):
+    keyboard = []
+    for i in range(3):
+        row = []
+        for j in range(3):
+            val = board[i][j]
+            text = val if val else "⬜"
+            row.append(InlineKeyboardButton(text, callback_data=f"move|{i}|{j}"))
+        keyboard.append(row)
+    return InlineKeyboardMarkup(keyboard)
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+def check_winner(board):
+    for row in board:
+        if row[0] and row.count(row[0]) == 3:
+            return row[0]
+    for col in range(3):
+        if board[0][col] and all(board[row][col] == board[0][col] for row in range(3)):
+            return board[0][col]
+    if board[0][0] and all(board[i][i] == board[0][0] for i in range(3)):
+        return board[0][0]
+    if board[0][2] and all(board[i][2 - i] == board[0][2] for i in range(3)):
+        return board[0][2]
+    return None
 
-bot = Client(
-    "GroupSecurityBot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
-    parse_mode=enums.ParseMode.HTML
-)
+def board_full(board):
+    return all(cell for row in board for cell in row)
 
-WELCOME_IMAGE_URL = "https://envs.sh/52H.jpg"
-WELCOME_CAPTION = (
-    "🤖 𝖦𝗋𝗈𝗎𝗉 𝖲𝖾𝖼𝗎𝗋𝗂𝗍𝗒 𝖱𝗈𝖻𝗈𝗍 🛡️\n\n"
-    "𝖶𝖾𝗅𝖼𝗈𝗆𝖾 𝗍𝗈 𝖦𝗋𝗈𝗎𝗉𝖲𝖾𝖼𝗎𝗋𝗂𝗍𝗒𝖱𝗈𝖻𝗈𝗍, 𝗒𝗈𝗎𝗋 𝗏𝗂𝗀𝗂𝗅𝖺𝗇𝗍 𝗀𝗎𝖺𝗋𝖽𝗂𝖺𝗇..."
-)
+@app.on_message(filters.command("start"))
+async def start(_, m: Message):
+    await m.reply("Welcome to Tic Tac Toe Bot!\nUse /newgame or /invite @user in a group to start playing.")
 
-WELCOME_BUTTONS = InlineKeyboardMarkup([
-    [InlineKeyboardButton(f"Owner @{OWNER_USERNAME}", url=f"https://t.me/{OWNER_USERNAME}")],
-    [InlineKeyboardButton(f"Support @{SUPPORT_USERNAME}", url=f"https://t.me/{SUPPORT_USERNAME}")],
-    [InlineKeyboardButton("➕ Add to Group", url="https://t.me/YourBotUsername?startgroup=true")]
-])
+@app.on_message(filters.command("newgame") & filters.group)
+async def new_game(_, m: Message):
+    chat_id = m.chat.id
+    if chat_id in games:
+        await m.reply("⚠️ A game is already active in this group.")
+        return
+    board = [[None]*3 for _ in range(3)]
+    games[chat_id] = {
+        "board": board,
+        "players": [m.from_user.id, None],
+        "turn": 0,
+        "message_id": None,
+        "symbols": ["❌", "⭕"]
+    }
+    msg = await m.reply(f"Tic Tac Toe Game Started!\n{m.from_user.mention} is ❌\nWaiting for second player...",
+        reply_markup=create_board(board))
+    games[chat_id]["message_id"] = msg.message_id
 
-PING_BUTTONS = InlineKeyboardMarkup([
-    [
-        InlineKeyboardButton("Close", callback_data="close_ping"),
-        InlineKeyboardButton("Add", url="https://t.me/YourBotUsername?startgroup=true"),
-    ]
-])
+@app.on_message(filters.command("endgame") & filters.group)
+async def end_game(_, m: Message):
+    if m.chat.id in games:
+        del games[m.chat.id]
+        await m.reply("🛑 Game ended by admin.")
+    else:
+        await m.reply("❌ No active game to end.")
 
-STATS_BUTTONS = InlineKeyboardMarkup([
-    [
-        InlineKeyboardButton("Close", callback_data="close_stats"),
-        InlineKeyboardButton("Add", url="https://t.me/YourBotUsername?startgroup=true"),
-    ]
-])
+@app.on_message(filters.command("invite") & filters.group)
+async def invite(_, m: Message):
+    if len(m.command) < 2 or not re.match(r"^@[\w\d_]+$", m.command[1]):
+        await m.reply("Usage: /invite @username")
+        return
 
-active_chats = set()
-active_users = set()
+    if m.chat.id in games:
+        await m.reply("⚠️ A game is already running in this group.")
+        return
 
+    target = m.command[1].lstrip("@")
+    invites[m.from_user.id] = target
+    await m.reply(f"🎯 Invitation sent to @{target}. Ask them to type /accept.")
 
-@bot.on_message(filters.command("start") & filters.private)
-async def start_handler(client: Client, message: Message):
-    user = message.from_user
-    active_users.add(user.id)
-    await message.reply_photo(
-        photo=WELCOME_IMAGE_URL,
-        caption=WELCOME_CAPTION,
-        reply_markup=WELCOME_BUTTONS
-    )
-    total_users = len(active_users)
-    log_text = (
-        f"🤖 Bot started by new user\n\n"
-        f"Name: {user.mention}\n"
-        f"Username: @{user.username or 'N/A'}\n"
-        f"UserID: <code>{user.id}</code>\n"
-        f"Total users: <b>{total_users}</b>"
-    )
-    try:
-        await client.send_message(LOG_GROUP_ID, log_text)
-    except Exception as e:
-        logger.error(f"Error sending start log: {e}")
-
-
-@bot.on_chat_member_updated()
-async def member_update(client, chat_member_updated):
-    if chat_member_updated.new_chat_member.user.is_self and chat_member_updated.old_chat_member.status == enums.ChatMemberStatus.LEFT:
-        chat = chat_member_updated.chat
-        active_chats.add(chat.id)
-        log_text = (
-            f"➕ Bot added in new group\n\n"
-            f"Name: {chat.title}\n"
-            f"Username: @{chat.username or 'N/A'}\n"
-            f"Chat ID: <code>{chat.id}</code>"
-        )
-        try:
-            await client.send_message(LOG_GROUP_ID, log_text)
-        except Exception as e:
-            logger.error(f"Error sending group add log: {e}")
-
-
-@bot.on_message(filters.text | filters.document)
-async def monitor_messages(client: Client, message: Message):
-    try:
-        member = await client.get_chat_member(message.chat.id, message.from_user.id)
-        if member.status in [enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER]:
+@app.on_message(filters.command("accept") & filters.group)
+async def accept_invite(_, m: Message):
+    user = m.from_user
+    for inviter_id, invited_username in invites.items():
+        if invited_username.lower() == user.username.lower():
+            board = [[None]*3 for _ in range(3)]
+            games[m.chat.id] = {
+                "board": board,
+                "players": [inviter_id, user.id],
+                "turn": 0,
+                "message_id": None,
+                "symbols": ["❌", "⭕"]
+            }
+            del invites[inviter_id]
+            msg = await m.reply(
+                f"✅ Match started between [User](tg://user?id={inviter_id}) and {user.mention}!",
+                reply_markup=create_board(board))
+            games[m.chat.id]["message_id"] = msg.message_id
             return
-    except Exception:
-        pass
+    await m.reply("❌ You don't have any active invite.")
 
-    text = message.text or ""
-    user_mention = message.from_user.mention
+@app.on_callback_query()
+async def handle_move(_, q: CallbackQuery):
+    chat_id = q.message.chat.id
+    user_id = q.from_user.id
 
-    if len(text) > 200:
-        try:
-            await message.delete()
-            await message.reply_text(f"{user_mention} 200 characters msg isn't allowed.")
-        except Exception:
-            pass
+    if chat_id not in games:
+        await q.answer("No active game here.", show_alert=True)
         return
 
-    if message.document:
-        if message.document.mime_type == "application/pdf":
-            try:
-                await message.delete()
-                await message.reply_text(f"{user_mention} PDF file isn't allowed.")
-            except Exception:
-                pass
-            return
-
-    if message.edit_date:
-        try:
-            await message.delete()
-            await message.reply_text(f"{user_mention} Editing msg isn't allowed.")
-        except Exception:
-            pass
+    game = games[chat_id]
+    if user_id not in game["players"]:
+        await q.answer("You're not in this game.", show_alert=True)
         return
 
-    if LINK_REGEX.search(text):
-        try:
-            await message.delete()
-            await message.reply_text(f"{user_mention} Links aren't allowed.")
-        except Exception:
-            pass
+    turn = game["turn"]
+    if user_id != game["players"][turn]:
+        await q.answer("Not your turn!", show_alert=True)
         return
 
-    lower_text = text.lower()
-    if any(word in lower_text for word in ABUSE_WORDS):
-        try:
-            await message.delete()
-            await message.reply_text(f"{user_mention} Please avoid abusive words.")
-        except Exception:
-            pass
+    _, i, j = q.data.split("|")
+    i, j = int(i), int(j)
+    if game["board"][i][j]:
+        await q.answer("Already taken!", show_alert=True)
         return
 
+    symbol = game["symbols"][turn]
+    game["board"][i][j] = symbol
 
-@bot.on_edited_message(filters.text | filters.document)
-async def handle_edited_message(client, message):
-    try:
-        await message.delete()
-        await message.reply_text(f"{message.from_user.mention} Editing msg isn't allowed.")
-    except Exception:
-        pass
+    winner = check_winner(game["board"])
+    if winner:
+        await q.message.edit_text(
+            f"{symbol} wins! 🎉",
+            reply_markup=create_board(game["board"]))
+        del games[chat_id]
+    elif board_full(game["board"]):
+        await q.message.edit_text("🤝 It's a draw!", reply_markup=create_board(game["board"]))
+        del games[chat_id]
+    else:
+        game["turn"] = 1 - turn
+        await q.message.edit_text(
+            f"{game['symbols'][game['turn']]}'s turn",
+            reply_markup=create_board(game["board"]))
 
-
-@bot.on_message(filters.new_chat_members)
-async def welcome_new_members(client: Client, message: Message):
-    for new_user in message.new_chat_members:
-        if new_user.is_bot:
-            continue
-
-        try:
-            user_info = await client.get_users(new_user.id)
-            bio = user_info.bio or ""
-            if LINK_REGEX.search(bio):
-                await client.restrict_chat_member(
-                    message.chat.id,
-                    new_user.id,
-                    permissions=enums.ChatPermissions(
-                        can_send_messages=False,
-                        can_send_media_messages=False,
-                        can_send_other_messages=False,
-                        can_add_web_page_previews=False,
-                    )
-                )
-                await message.reply_text(f"{new_user.mention} Bio link isn't allowed. You are muted.")
-        except Exception:
-            pass
-
-
-@bot.on_message(filters.command("broadcast") & filters.user(OWNER_USERNAME))
-async def broadcast_handler(client: Client, message: Message):
-    args = message.text.split(None, 1)
-    if len(args) < 2:
-        await message.reply_text("Usage: /broadcast <message>")
-        return
-
-    broadcast_text = args[1]
-    success_count = 0
-    fail_count = 0
-
-    async for dialog in client.get_dialogs():
-        chat = dialog.chat
-        try:
-            await client.send_message(chat.id, broadcast_text)
-            success_count += 1
-        except Exception:
-            fail_count += 1
-
-    await message.reply_text(f"Broadcast completed.\nSuccess: {success_count}\nFailed: {fail_count}")
-
-
-@bot.on_message(filters.command("ping"))
-async def ping_handler(client: Client, message: Message):
-    start = time.time()
-    rep = await message.reply_text("Pinging...")
-    end = time.time()
-    ms = int((end - start) * 1000)
-    await rep.edit_text(f"🤖 **PONG**: `{ms}`ᴍs", reply_markup=PING_BUTTONS)
-
-
-@bot.on_callback_query(filters.regex("close_"))
-async def close_callback(client, callback_query):
-    await callback_query.message.delete()
-    await callback_query.answer()
-
-
-@bot.on_message(filters.command("stats"))
-async def stats_handler(client: Client, message: Message):
-    total_groups = len(active_chats)
-    total_users = len(active_users)
-
-    text = (
-        f"📊 <b>Bot Stats</b> 📊\n\n"
-        f"Total groups where bot is active: <b>{total_groups}</b>\n"
-        f"Total unique users interacted: <b>{total_users}</b>"
-    )
-
-    await message.reply_photo(
-        photo=WELCOME_IMAGE_URL,
-        caption=text,
-        reply_markup=STATS_BUTTONS
-    )
-
-
-print("Bot is starting...")
-bot.run()
+app.run()
