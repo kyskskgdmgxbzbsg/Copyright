@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 import re
 
-API_ID = "28588693"  # 🔁 Replace with your API ID
+API_ID = "28588693"  # Replace with your API ID
 API_HASH = "fac94f1f1aa4aa395280a670ddf9c0f2"
 BOT_TOKEN = "7867961929:AAE2TMkj5eSQQvR13_P3D5KXTQs3F_tksrc"
 
@@ -43,7 +43,7 @@ def board_full(board):
 
 @app.on_message(filters.command("start"))
 async def start(_, m: Message):
-    await m.reply("🎮 Welcome to Multi-Game Tic Tac Toe Bot!\nCommands:\n/newgame\n/invite @user\n/accept\n/endgame")
+    await m.reply("🎮 Welcome to Multi-Game Tic Tac Toe Bot!\nCommands:\n/newgame\n/invite (reply or @username)\n/accept\n/endgame")
 
 @app.on_message(filters.command("newgame") & filters.group)
 async def new_game(_, m: Message):
@@ -69,40 +69,48 @@ async def new_game(_, m: Message):
 
 @app.on_message(filters.command("invite") & filters.group)
 async def invite(_, m: Message):
-    if len(m.command) < 2 or not re.match(r"^@[\w\d_]+$", m.command[1]):
-        return await m.reply("Usage: /invite @username")
-
     chat_id = m.chat.id
     inviter_id = m.from_user.id
-    username = m.command[1].lstrip("@")
+
+    if m.reply_to_message:
+        invited_user = m.reply_to_message.from_user
+    elif len(m.command) >= 2 and re.match(r"^@[\w\d_]+$", m.command[1]):
+        username = m.command[1].lstrip("@")
+        try:
+            invited_user = await app.get_users(username)
+        except:
+            return await m.reply("❌ Invalid username.")
+    else:
+        return await m.reply("⚠️ Use /invite by replying to a user or providing a valid @username.")
 
     if chat_id not in invites:
         invites[chat_id] = {}
-    invites[chat_id][inviter_id] = username
-    await m.reply(f"📨 Invite sent to @{username}. They can /accept.")
+    invites[chat_id][inviter_id] = invited_user.id
+    await m.reply(f"📨 Invite sent to {invited_user.mention}. They can /accept.")
 
 @app.on_message(filters.command("accept") & filters.group)
 async def accept(_, m: Message):
     user = m.from_user
     chat_id = m.chat.id
+
     if chat_id not in invites:
         return await m.reply("No invites found.")
 
-    for inviter, invited in invites[chat_id].items():
-        if invited.lower() == (user.username or "").lower():
-            game_id = f"{inviter}:{user.id}"
+    for inviter_id, invited_id in list(invites[chat_id].items()):
+        if invited_id == user.id:
+            game_id = f"{inviter_id}:{user.id}"
             board = [[None]*3 for _ in range(3)]
             if chat_id not in games:
                 games[chat_id] = {}
             games[chat_id][game_id] = {
                 "board": board,
-                "players": [inviter, user.id],
+                "players": [inviter_id, user.id],
                 "turn": 0,
                 "symbols": ["❌", "⭕"]
             }
-            del invites[chat_id][inviter]
+            del invites[chat_id][inviter_id]
             msg = await m.reply(
-                f"✅ Game started between [Player1](tg://user?id={inviter}) and {user.mention}!",
+                f"✅ Game started between [Player1](tg://user?id={inviter_id}) and {user.mention}!",
                 reply_markup=create_board(board, game_id)
             )
             return
@@ -158,7 +166,7 @@ async def on_button(_, q: CallbackQuery):
     if winner:
         winner_user_id = game["players"][turn]
         await q.message.edit_text(f"{symbol} wins! 🏆", reply_markup=create_board(game["board"], game_id))
-        await app.send_message(chat_id, f"🏆 Congratulations [Player](tg://user?id={winner_user_id})!", disable_web_page_preview=True)
+        await app.send_message(chat_id, f"🏆 Congratulations [Player](tg://user?id={winner_user_id})!")
         await app.send_sticker(chat_id, WIN_STICKER)
         del games[chat_id][game_id]
     elif board_full(game["board"]):
