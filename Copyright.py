@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 import re
 
-API_ID = "28588693"  # Replace with your API ID
+API_ID = "28588693"  # 🔁 Replace with your API ID
 API_HASH = "fac94f1f1aa4aa395280a670ddf9c0f2"
 BOT_TOKEN = "7867961929:AAE2TMkj5eSQQvR13_P3D5KXTQs3F_tksrc"
 
@@ -11,7 +11,6 @@ app = Client("multi_game_ttt", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_T
 games = {}
 invites = {}
 
-# ✅ Add sticker IDs here
 WIN_STICKER = "CAACAgUAAxkBAAEHUt5lkoDqj8ZT8KwGxH4AJT9KDgvzOQACVQoAAhZCwFYbnk5Pg9xvwzUE"
 DRAW_STICKER = "CAACAgUAAxkBAAEHUt9lkoEGMJWUzBe6W70oQVG7w0KfZQACVgoAAhZCwFYodfy74Xq8uTUE"
 
@@ -157,7 +156,9 @@ async def on_button(_, q: CallbackQuery):
 
     winner = check_winner(game["board"])
     if winner:
+        winner_user_id = game["players"][turn]
         await q.message.edit_text(f"{symbol} wins! 🏆", reply_markup=create_board(game["board"], game_id))
+        await app.send_message(chat_id, f"🏆 Congratulations [Player](tg://user?id={winner_user_id})!", disable_web_page_preview=True)
         await app.send_sticker(chat_id, WIN_STICKER)
         del games[chat_id][game_id]
     elif board_full(game["board"]):
