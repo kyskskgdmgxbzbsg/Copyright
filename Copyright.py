@@ -2,9 +2,9 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import re
 
-API_ID = 123456     # ← replace with your API ID
-API_HASH = "your_api_hash"   # ← replace with your API hash
-BOT_TOKEN = "your_bot_token" # ← replace with your Bot token
+API_ID = "28588693"     # ← replace with your API ID
+API_HASH = "fac94f1f1aa4aa395280a670ddf9c0f2"   # ← replace with your API hash
+BOT_TOKEN = "7867961929:AAE2TMkj5eSQQvR13_P3D5KXTQs3F_tksrc" # ← replace with your Bot token
 
 app = Client("tttbot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
