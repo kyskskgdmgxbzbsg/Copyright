@@ -11,8 +11,8 @@ app = Client("multi_game_ttt", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_T
 games = {}
 invites = {}
 
-WIN_STICKER = "CAACAgUAAxkBAAEHUt5lkoDqj8ZT8KwGxH4AJT9KDgvzOQACVQoAAhZCwFYbnk5Pg9xvwzUE"
-DRAW_STICKER = "CAACAgUAAxkBAAEHUt9lkoEGMJWUzBe6W70oQVG7w0KfZQACVgoAAhZCwFYodfy74Xq8uTUE"
+WIN_STICKER = "CAACAgIAAxkBAANiaFqIiDCRcCgJtSlcXIUWxrovgusAAm9pAAJTgTlIcRMVHNuWo6YeBA"
+DRAW_STICKER = "CAACAgUAAxkBAANlaFqI0odm3LLic6xIwRm9c-iDIm8AAlIIAAKOd8FWSHOml8hsXbgeBA"
 
 def create_board(board, game_id):
     keyboard = []
